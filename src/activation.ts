@@ -1,67 +1,50 @@
-import { RealType } from './common_configuration';
+import { ActivationType, RealType } from './types.js';
 
-/**
- * Type for activation function pointer
- */
-export type ActivationPtr = (x: RealType) => RealType;
-
-/**
- * Enumeration of available activation functions
- */
-export enum Activation {
-    None = 'none',
-    Sigm = 'sigm',
-    Relu = 'relu',
-    Tanh = 'tanh',
+// 活性化関数のインターフェース
+export interface IActivationFunction {
+  activate(value: RealType): RealType;
 }
 
-/**
- * Collection of activation functions
- */
-export class ActivationFunction {
-    /**
-     * Returns the activation function for the given activation type
-     */
-    static getFunction(activation: Activation): ActivationPtr {
-        switch (activation) {
-            case Activation.None:
-                return ActivationFunction.none;
-            case Activation.Sigm:
-                return ActivationFunction.sigm;
-            case Activation.Relu:
-                return ActivationFunction.relu;
-            case Activation.Tanh:
-                return ActivationFunction.tanh;
-            default:
-                return ActivationFunction.none;
-        }
-    }
+// 活性化関数の実装
+export class ActivationFunction implements IActivationFunction {
+  private readonly activationType: ActivationType;
 
-    /**
-     * Identity activation function
-     */
-    static none(x: RealType): RealType {
-        return x;
-    }
+  constructor(type: ActivationType) {
+    this.activationType = type;
+  }
 
-    /**
-     * Sigmoid activation function
-     */
-    static sigm(x: RealType): RealType {
-        return 1.0 / (1.0 + Math.exp(-4.9 * x));
+  public activate(value: RealType): RealType {
+    switch (this.activationType) {
+      case ActivationType.None:
+        return value;
+      case ActivationType.Sigmoid:
+        return 1.0 / (1.0 + Math.exp(-4.9 * value));
+      case ActivationType.ReLU:
+        return (value + Math.abs(value)) * 0.5;
+      case ActivationType.Tanh:
+        return Math.tanh(value);
+      default:
+        return value;
     }
+  }
 
-    /**
-     * ReLU activation function
-     */
-    static relu(x: RealType): RealType {
-        return (x + Math.abs(x)) * 0.5;
-    }
+  public getType(): ActivationType {
+    return this.activationType;
+  }
+}
 
-    /**
-     * Hyperbolic tangent activation function
-     */
-    static tanh(x: RealType): RealType {
-        return Math.tanh(x);
+// 活性化関数のファクトリー
+export class ActivationFunctionFactory {
+  private static readonly instances = new Map<ActivationType, IActivationFunction>();
+
+  public static getFunction(type: ActivationType): IActivationFunction {
+    if (!this.instances.has(type)) {
+      this.instances.set(type, new ActivationFunction(type));
     }
+    return this.instances.get(type)!;
+  }
+
+  public static createFunction(type: ActivationType): IActivationFunction {
+    return new ActivationFunction(type);
+  }
 }

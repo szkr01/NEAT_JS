@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEAT.js デモ</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #27ae60;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .test-result {
+            display: inline-block;
+            margin: 5px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .test-pass {
+            background: #d5edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧠 NEAT.js デモンストレーション</h1>
+    
+    <div class="container">
+        <h2>XOR問題の解決</h2>
+        <p>NEATアルゴリズムを使ってXOR（排他的論理和）問題を解決します。</p>
+        
+        <button id="xor-evolve" onclick="solveXOR()">XOR問題を進化で解決</button>
+        <button id="xor-test" onclick="testXOR()" disabled>解を評価</button>
+        
+        <div class="progress">
+            <div id="xor-progress" class="progress-bar"></div>
+        </div>
+        
+        <div id="xor-output" class="output">進化を開始するボタンをクリックしてください...</div>
+        
+        <div id="xor-results"></div>
+    </div>
+
+    <div class="container">
+        <h2>進化統計</h2>
+        <div id="stats" class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="generation">-</div>
+                <div class="stat-label">世代</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="best-fitness">-</div>
+                <div class="stat-label">最高適応度</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avg-nodes">-</div>
+                <div class="stat-label">平均ノード数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avg-connections">-</div>
+                <div class="stat-label">平均接続数</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>カスタム適応度関数</h2>
+        <p>異なる適応度関数を試してみましょう。</p>
+        
+        <button onclick="solveSineWave()">Sine波近似</button>
+        <button onclick="solveStepFunction()">ステップ関数近似</button>
+        
+        <div id="custom-output" class="output">カスタム問題を選択してください...</div>
+    </div>
+
+    <script src="dist/neat.js"></script>
+    <script>
+        let globalNeat = new NEAT.NEAT({ seed: 42 });
+        let bestGenome = null;
+
+        function updateOutput(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent += message + '\n';
+            element.scrollTop = element.scrollHeight;
+        }
+
+        function updateProgress(percentage) {
+            document.getElementById('xor-progress').style.width = percentage + '%';
+        }
+
+        function updateStats(result, neat) {
+            document.getElementById('generation').textContent = result.generation;
+            document.getElementById('best-fitness').textContent = result.bestFitness.toFixed(4);
+            
+            const stats = neat.getStats(result.population);
+            document.getElementById('avg-nodes').textContent = stats.averageNodes.toFixed(1);
+            document.getElementById('avg-connections').textContent = stats.averageConnections.toFixed(1);
+        }
+
+        async function solveXOR() {
+            const button = document.getElementById('xor-evolve');
+            const testButton = document.getElementById('xor-test');
+            
+            button.disabled = true;
+            testButton.disabled = true;
+            
+            document.getElementById('xor-output').textContent = '';
+            updateOutput('xor-output', 'XOR問題の進化を開始...');            const fitnessFunction = (genome) => {
+                const network = globalNeat.createNetwork(genome);
+                let fitness = 0;
+
+                const testCases = [
+                    { input: [0, 0], expected: 0 },
+                    { input: [0, 1], expected: 1 },
+                    { input: [1, 0], expected: 1 },
+                    { input: [1, 1], expected: 0 }
+                ];
+
+                for (const testCase of testCases) {
+                    const output = network.execute(testCase.input);
+                    const error = Math.abs(output[0] - testCase.expected);
+                    
+                    // 改良された適応度計算
+                    if (error < 0.1) {
+                        fitness += 1.0;
+                    } else if (error < 0.3) {
+                        fitness += 0.8;
+                    } else if (error < 0.5) {
+                        fitness += 0.5;
+                    } else {
+                        fitness += Math.max(0, 1.0 - error);
+                    }
+                }
+
+                return { fitness: Math.max(0, fitness) };
+            };
+
+            try {
+                const result = globalNeat.run(
+                    2, 1, fitnessFunction, 
+                    { 
+                        ...NEAT.DEFAULT_EVOLUTION_CONFIG,
+                        maxGenerations: 100, 
+                        populationSize: 500 
+                    }
+                );
+
+                bestGenome = result.bestGenome;
+                updateProgress(100);
+                updateStats(result, globalNeat);
+                
+                updateOutput('xor-output', `進化完了!`);
+                updateOutput('xor-output', `最高適応度: ${result.bestFitness.toFixed(4)}`);
+                updateOutput('xor-output', `世代数: ${result.generation}`);
+                
+                testButton.disabled = false;
+            } catch (error) {
+                updateOutput('xor-output', `エラー: ${error.message}`);
+            }
+            
+            button.disabled = false;
+        }
+
+        function testXOR() {
+            if (!bestGenome) {
+                updateOutput('xor-output', '先に進化を実行してください');
+                return;
+            }
+
+            const network = globalNeat.createNetwork(bestGenome);
+            const testCases = [
+                { input: [0, 0], expected: 0 },
+                { input: [0, 1], expected: 1 },
+                { input: [1, 0], expected: 1 },
+                { input: [1, 1], expected: 0 }
+            ];
+
+            updateOutput('xor-output', '\n=== XOR テスト結果 ===');
+            
+            let resultsHtml = '';
+            for (const testCase of testCases) {
+                const output = network.execute(testCase.input);
+                const result = output[0];
+                const isCorrect = Math.abs(result - testCase.expected) < 0.5;
+                
+                updateOutput('xor-output', 
+                    `XOR(${testCase.input.join(',')}) = ${result.toFixed(4)} (期待値: ${testCase.expected})`);
+                
+                resultsHtml += `<div class="test-result ${isCorrect ? 'test-pass' : 'test-fail'}">
+                    ${testCase.input.join(',')} → ${result.toFixed(3)}
+                </div>`;
+            }
+            
+            document.getElementById('xor-results').innerHTML = resultsHtml;
+        }
+
+        async function solveSineWave() {
+            document.getElementById('custom-output').textContent = '';
+            updateOutput('custom-output', 'Sine波近似を開始...');
+
+            const fitnessFunction = (genome) => {
+                const network = globalNeat.createNetwork(genome);
+                let error = 0;
+
+                for (let i = 0; i < 20; i++) {
+                    const x = (i / 19) * 2 * Math.PI;
+                    const expected = Math.sin(x);
+                    const output = network.execute([x / (2 * Math.PI)]); // 正規化
+                    error += Math.abs(output[0] - expected);
+                }
+
+                return { fitness: Math.max(0, 20 - error) };
+            };
+
+            try {
+                const result = globalNeat.run(
+                    1, 1, fitnessFunction,
+                    { maxGenerations: 50, populationSize: 30 }
+                );
+
+                updateOutput('custom-output', `Sine波近似完了!`);
+                updateOutput('custom-output', `最高適応度: ${result.bestFitness.toFixed(4)}`);
+                
+                // テスト
+                const network = globalNeat.createNetwork(result.bestGenome);
+                updateOutput('custom-output', '\nテスト結果:');
+                for (let i = 0; i < 5; i++) {
+                    const x = (i / 4) * 2 * Math.PI;
+                    const expected = Math.sin(x);
+                    const output = network.execute([x / (2 * Math.PI)]);
+                    updateOutput('custom-output', 
+                        `sin(${x.toFixed(2)}) = ${output[0].toFixed(4)} (期待値: ${expected.toFixed(4)})`);
+                }
+            } catch (error) {
+                updateOutput('custom-output', `エラー: ${error.message}`);
+            }
+        }
+
+        async function solveStepFunction() {
+            document.getElementById('custom-output').textContent = '';
+            updateOutput('custom-output', 'ステップ関数近似を開始...');
+
+            const fitnessFunction = (genome) => {
+                const network = globalNeat.createNetwork(genome);
+                let fitness = 0;
+
+                for (let i = 0; i < 10; i++) {
+                    const x = i / 9;
+                    const expected = x < 0.5 ? 0 : 1;
+                    const output = network.execute([x]);
+                    const error = Math.abs(output[0] - expected);
+                    fitness += 1.0 - error;
+                }
+
+                return { fitness: Math.max(0, fitness) };
+            };
+
+            try {
+                const result = globalNeat.run(
+                    1, 1, fitnessFunction,
+                    { maxGenerations: 30, populationSize: 25 }
+                );
+
+                updateOutput('custom-output', `ステップ関数近似完了!`);
+                updateOutput('custom-output', `最高適応度: ${result.bestFitness.toFixed(4)}`);
+                
+                // テスト
+                const network = globalNeat.createNetwork(result.bestGenome);
+                updateOutput('custom-output', '\nテスト結果:');
+                for (let i = 0; i < 10; i++) {
+                    const x = i / 9;
+                    const expected = x < 0.5 ? 0 : 1;
+                    const output = network.execute([x]);
+                    updateOutput('custom-output', 
+                        `step(${x.toFixed(2)}) = ${output[0].toFixed(4)} (期待値: ${expected})`);
+                }
+            } catch (error) {
+                updateOutput('custom-output', `エラー: ${error.message}`);
+            }
+        }
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateOutput('xor-output', 'NEAT.js が正常に読み込まれました！');
+            updateOutput('xor-output', 'NEATアルゴリズムを使ってXOR問題を解決しましょう。');
+        });
+    </script>
+</body>
+</html>

@@ -1,235 +1,200 @@
-import { Activation, ActivationFunction, ActivationPtr } from './activation';
-import { RealType } from './common_configuration';
+import { RealType, NetworkInfo } from './types.js';
+import { IActivationFunction } from './activation.js';
 
-/**
- * Network information structure
- */
-export class NetworkInfo {
-    public inputs: number = 0;
-    public outputs: number = 0;
-    public hidden: number = 0;
-
-    constructor(inputs?: number, outputs?: number) {
-        if (inputs !== undefined) this.inputs = inputs;
-        if (outputs !== undefined) this.outputs = outputs;
-        this.hidden = 0;
-    }
-
-    /**
-     * Returns the total number of nodes in the network
-     */
-    getNodeCount(): number {
-        return this.inputs + this.hidden + this.outputs;
-    }
+// ネットワークのノード
+export interface INetworkNode {
+  readonly activation: IActivationFunction;
+  readonly bias: RealType;
+  readonly depth: number;
+  readonly connectionCount: number;
+  setValue(value: RealType): void;
+  getValue(): RealType;
+  getActivatedValue(): RealType;
+  reset(): void;
 }
 
-/**
- * Network node representation
- */
-export class NetworkNode {
-    public activation: ActivationPtr = ActivationFunction.none;
-    public sum: RealType = 0.0;
-    public bias: RealType = 0.0;
-    public connectionCount: number = 0;
-    public depth: number = 0;
-
-    /**
-     * Gets the computed value of this node
-     */
-    getValue(): RealType {
-        return this.activation(this.sum + this.bias);
-    }
+// ネットワークの接続
+export interface INetworkConnection {
+  readonly to: number;
+  readonly weight: RealType;
+  getValue(): RealType;
+  setValue(value: RealType): void;
 }
 
-/**
- * Network connection representation
- */
-export class NetworkConnection {
-    public to: number = 0;
-    public weight: RealType = 0.0;
-    public value: RealType = 0.0;
+// ニューラルネットワークのインターフェース
+export interface INetwork {
+  readonly info: NetworkInfo;
+  readonly maxDepth: number;
+  
+  execute(inputs: readonly RealType[]): readonly RealType[];
+  getOutputs(): readonly RealType[];
+  reset(): void;
 }
 
-/**
- * Union-like structure for efficient memory layout
- * In TypeScript, we'll use a tagged union approach
- */
-export type NetworkSlot = {
-    type: 'node';
-    node: NetworkNode;
-} | {
-    type: 'connection';
-    connection: NetworkConnection;
-};
+// ネットワークノードの実装
+class NetworkNode implements INetworkNode {
+  private _sum: RealType = 0.0;
 
-/**
- * Neural network execution engine
- */
-export class Network {
-    public slots: NetworkSlot[] = [];
-    public output: RealType[] = [];
-    public info: NetworkInfo = new NetworkInfo();
-    public maxDepth: number = 0;
-    public connectionCount: number = 0;
+  constructor(
+    public readonly activation: IActivationFunction,
+    public readonly bias: RealType,
+    public readonly depth: number,
+    public readonly connectionCount: number
+  ) {}
 
-    /**
-     * Initializes the slots vector
-     */
-    initialize(info: NetworkInfo, connectionCount: number): void {
-        this.info = info;
-        this.connectionCount = connectionCount;
+  public setValue(value: RealType): void {
+    this._sum = value;
+  }
 
-        // Initialize slots with nodes first, then connections
-        this.slots = [];
-        
-        // Add node slots
-        for (let i = 0; i < info.getNodeCount(); i++) {
-            this.slots.push({
-                type: 'node',
-                node: new NetworkNode()
-            });
-        }
-        
-        // Add connection slots
-        for (let i = 0; i < connectionCount; i++) {
-            this.slots.push({
-                type: 'connection',
-                connection: new NetworkConnection()
-            });
-        }
+  public getValue(): RealType {
+    return this._sum;
+  }
 
-        this.output = new Array(info.outputs).fill(0);
+  public getActivatedValue(): RealType {
+    return this.activation.activate(this._sum + this.bias);
+  }
+
+  public reset(): void {
+    this._sum = 0.0;
+  }
+}
+
+// ネットワーク接続の実装
+class NetworkConnection implements INetworkConnection {
+  private _value: RealType = 0.0;
+
+  constructor(
+    public readonly to: number,
+    public readonly weight: RealType
+  ) {}
+
+  public getValue(): RealType {
+    return this._value;
+  }
+
+  public setValue(value: RealType): void {
+    this._value = value * this.weight;
+  }
+}
+
+// ニューラルネットワークの実装
+export class Network implements INetwork {
+  private readonly _nodes: NetworkNode[] = [];
+  private readonly _connections: NetworkConnection[] = [];
+  private readonly _outputs: RealType[] = [];
+  private readonly _info: NetworkInfo;
+  private readonly _maxDepth: number;
+
+  constructor(
+    info: NetworkInfo,
+    nodes: readonly NetworkNode[],
+    connections: readonly NetworkConnection[],
+    maxDepth: number
+  ) {
+    this._info = info;
+    this._nodes = [...nodes];
+    this._connections = [...connections];
+    this._outputs = new Array(info.outputs).fill(0);
+    this._maxDepth = maxDepth;
+  }
+
+  public get info(): NetworkInfo {
+    return this._info;
+  }
+
+  public get maxDepth(): number {
+    return this._maxDepth;
+  }
+
+  public execute(inputs: readonly RealType[]): readonly RealType[] {
+    if (inputs.length !== this._info.inputs) {
+      throw new Error(`Input size mismatch: expected ${this._info.inputs}, got ${inputs.length}`);
     }
 
-    /**
-     * Sets node properties
-     */
-    setNode(i: number, activation: Activation, bias: RealType, connectionCount: number): void {
-        const node = this.getNode(i);
-        node.activation = ActivationFunction.getFunction(activation);
-        node.bias = bias;
-        node.connectionCount = connectionCount;
+    // ノードをリセット
+    this.reset();
+
+    // 入力を設定
+    for (let i = 0; i < this._info.inputs; i++) {
+      this._nodes[i].setValue(inputs[i]);
     }
 
-    /**
-     * Sets node depth
-     */
-    setNodeDepth(i: number, depth: number): void {
-        const slot = this.slots[i];
-        if (slot.type === 'node') {
-            slot.node.depth = depth;
-        }
+    // ネットワークを実行
+    let connectionIndex = 0;
+    for (let i = 0; i < this._nodes.length; i++) {
+      const node = this._nodes[i];
+      const activatedValue = node.getActivatedValue();
+
+      // この ノードからの接続を処理
+      for (let j = 0; j < node.connectionCount; j++) {
+        const connection = this._connections[connectionIndex++];
+        connection.setValue(activatedValue);
+        this._nodes[connection.to].setValue(
+          this._nodes[connection.to].getValue() + connection.getValue()
+        );
+      }
     }
 
-    /**
-     * Sets connection properties
-     */
-    setConnection(i: number, to: number, weight: RealType): void {
-        const connection = this.getConnection(i);
-        connection.to = to;
-        connection.weight = weight;
+    // 出力を更新
+    const outputStartIndex = this._info.inputs + this._info.hidden;
+    for (let i = 0; i < this._info.outputs; i++) {
+      this._outputs[i] = this._nodes[outputStartIndex + i].getActivatedValue();
     }
 
-    /**
-     * Gets a connection by index
-     */
-    getConnection(i: number): NetworkConnection {
-        const slot = this.slots[this.info.getNodeCount() + i];
-        if (slot.type === 'connection') {
-            return slot.connection;
-        }
-        throw new Error(`Slot ${this.info.getNodeCount() + i} is not a connection`);
+    return this._outputs;
+  }
+
+  public getOutputs(): readonly RealType[] {
+    return this._outputs;
+  }
+
+  public reset(): void {
+    for (const node of this._nodes) {
+      node.reset();
+    }
+  }
+
+  // ネットワークビルダー
+  public static builder(): NetworkBuilder {
+    return new NetworkBuilder();
+  }
+}
+
+// ネットワークビルダークラス
+export class NetworkBuilder {
+  private _info?: NetworkInfo;
+  private _nodes: NetworkNode[] = [];
+  private _connections: NetworkConnection[] = [];
+  private _maxDepth: number = 0;
+
+  public setInfo(info: NetworkInfo): NetworkBuilder {
+    this._info = info;
+    return this;
+  }
+
+  public addNode(
+    activation: IActivationFunction,
+    bias: RealType,
+    depth: number,
+    connectionCount: number
+  ): NetworkBuilder {
+    const node = new NetworkNode(activation, bias, depth, connectionCount);
+    this._nodes.push(node);
+    this._maxDepth = Math.max(this._maxDepth, depth);
+    return this;
+  }
+
+  public addConnection(to: number, weight: RealType): NetworkBuilder {
+    const connection = new NetworkConnection(to, weight);
+    this._connections.push(connection);
+    return this;
+  }
+
+  public build(): Network {
+    if (!this._info) {
+      throw new Error('Network info must be set before building');
     }
 
-    /**
-     * Gets a node by index
-     */
-    getNode(i: number): NetworkNode {
-        const slot = this.slots[i];
-        if (slot.type === 'node') {
-            return slot.node;
-        }
-        throw new Error(`Slot ${i} is not a node`);
-    }
-
-    /**
-     * Gets an output node by output index
-     */
-    getOutput(i: number): NetworkNode {
-        return this.getNode(this.info.inputs + this.info.hidden + i);
-    }
-
-    /**
-     * Executes the network with given input
-     */
-    execute(input: RealType[]): boolean {
-        // Check compatibility
-        if (input.length !== this.info.inputs) {
-            console.error('Input size mismatch, aborting');
-            return false;
-        }
-
-        // Reset nodes
-        this.foreachNode((node: NetworkNode) => {
-            node.sum = 0.0;
-        });
-
-        // Initialize input
-        for (let i = 0; i < this.info.inputs; i++) {
-            this.getNode(i).sum = input[i];
-        }
-
-        // Execute network
-        let currentConnection = 0;
-        const nodeCount = this.info.getNodeCount();
-        for (let i = 0; i < nodeCount; i++) {
-            const node = this.getNode(i);
-            const value = node.getValue();
-            for (let o = 0; o < node.connectionCount; o++) {
-                const connection = this.getConnection(currentConnection++);
-                connection.value = value * connection.weight;
-                this.getNode(connection.to).sum += connection.value;
-            }
-        }
-
-        // Update output
-        for (let i = 0; i < this.info.outputs; i++) {
-            this.output[i] = this.getOutput(i).getValue();
-        }
-
-        return true;
-    }
-
-    /**
-     * Gets the network execution result
-     */
-    getResult(): RealType[] {
-        return this.output;
-    }
-
-    /**
-     * Iterates over all nodes
-     */
-    foreachNode(callback: (node: NetworkNode, index: number) => void): void {
-        const nodeCount = this.info.getNodeCount();
-        for (let i = 0; i < nodeCount; i++) {
-            callback(this.getNode(i), i);
-        }
-    }
-
-    /**
-     * Iterates over all connections
-     */
-    foreachConnection(callback: (connection: NetworkConnection, index: number) => void): void {
-        for (let i = 0; i < this.connectionCount; i++) {
-            callback(this.getConnection(i), i);
-        }
-    }
-
-    /**
-     * Returns the depth of the network
-     */
-    getDepth(): number {
-        return this.maxDepth;
-    }
+    return new Network(this._info, this._nodes, this._connections, this._maxDepth);
+  }
 }

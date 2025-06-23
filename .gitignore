@@ -4,25 +4,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Built files
-dist/
-build/
-
-# Coverage
-coverage/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
+# Production build
+/dist/
+*.tgz
+*.tar.gz
 
 # Runtime data
 pids
@@ -30,5 +15,42 @@ pids
 *.seed
 *.pid.lock
 
-# nyc test coverage
-.nyc_output
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Jest coverage
+coverage/
+
+# Test results
+*.csv
+
+# Logs
+logs
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo

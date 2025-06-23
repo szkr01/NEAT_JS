@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "NEAT.js - Build and Test",
+			"type": "shell",
+			"command": "npm run build && npm test",
+			"group": "build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc",
+				"$eslint-stylish"
+			],
+			"args": []
+		}
+	]
+}
