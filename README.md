@@ -1,25 +1,11 @@
 # NEAT.js
 
-**NEAT (NeuroEvolution of Augmenting Topologies)** の TypeScript 実装です。進化的アルゴリズムを使用してニューラルネットワークの構造と重みを同時に最適化します。
-
-## 特徴
-
-- **テスト駆動開発**: 高いコードカバレッジと信頼性
-- **SOLID原則**: 保守しやすく拡張可能な設計
-- **TypeScript**: 完全な型安全性
-- **単一ファイルバンドル**: `neat.js` だけで使用可能
-- **PowerShell対応**: Windows環境での開発をサポート
+**NEAT (NeuroEvolution of Augmenting Topologies)** の TypeScript 実装。進化的アルゴリズムを使用してニューラルネットワークの構造と重みを同時に最適化します。
 
 ## インストール
 
-```bash
-npm install neat-js
-```
-
-または、dist/neat.js を直接使用:
-
 ```html
-<script src="dist/neat.js"></script>
+<script src="release/neat.js"></script>
 <script>
   const neat = new NEAT.NEAT();
 </script>
@@ -325,73 +311,9 @@ npm run demo:xor
 # sin(x) + y 回帰学習テスト  
 npm run demo:sin
 
-# 倒立振子制御テスト（実装予定）
+# 倒立振子制御テスト
 npm run demo:cartpole
 ```
-
-## テスト実行例
-
-### XOR問題
-
-```bash
-node test_xor.js
-```
-
-期待される出力：
-```
-🧠 NEAT.js XOR学習テスト開始...
-🎉 XOR学習成功! NEATアルゴリズムが正常に動作しています。
-   (適応度 4.000000 >= 閾値 3.5)
-```
-
-### sin(x) + y回帰問題
-
-```bash
-node test_sin_regression.js
-```
-
-期待される出力：
-```
-🧠 NEAT.js sin(x) + y 回帰学習テスト開始...
-🎉 sin(x) + y学習成功! NEATアルゴリズムが複雑な関数を学習できています。
-   (適応度 8.437476 >= 閾値 6)
-```
-
-## 開発
-
-```bash
-# 依存関係をインストール
-npm install
-
-# テストを実行
-npm test
-
-# テストを監視モードで実行
-npm run test:watch
-
-# カバレッジレポートを生成
-npm run test:coverage
-
-# ビルド
-npm run build
-
-# 開発用ビルド（監視モード）
-npm run dev
-
-# リント
-npm run lint
-npm run lint:fix
-```
-
-## アーキテクチャ
-
-このライブラリは以下のSOLID原則に従って設計されています：
-
-1. **単一責任原則**: 各クラスは単一の責任を持つ
-2. **開放閉鎖原則**: 拡張に対して開放的、修正に対して閉鎖的
-3. **リスコフ置換原則**: インターフェースの実装は置換可能
-4. **インターフェース分離原則**: 使用しないメソッドに依存しない
-5. **依存関係逆転原則**: 抽象に依存し、具象に依存しない
 
 ### 主要コンポーネント
 
@@ -405,11 +327,3 @@ npm run lint:fix
 ## ライセンス
 
 MIT
-
-## 貢献
-
-プルリクエストや課題報告を歓迎します。開発に貢献する前に、テストが通ることを確認してください。
-
-```bash
-npm test
-```
