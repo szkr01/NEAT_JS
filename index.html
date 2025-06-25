@@ -1,401 +1,623 @@
 <!DOCTYPE html>
 <html lang="ja" class="h-full bg-gray-50">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEAT.js XOR Solver - Minimal White UI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>NEAT.js XOR Solver - Minimal White UI</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+		integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+		crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<style>
+		body {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+		}
 
-        /* === IMPROVED EVOLUTION PARAMETERS STYLES START === */
-        .param-label {
-            @apply block text-sm font-medium text-gray-600 mb-1;
-        }
-        .param-input {
-            @apply block w-full px-3 py-2.5 
-                   bg-white border border-gray-300 rounded-lg 
-                   text-sm text-gray-800 
-                   focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-30 
-                   transition-all duration-150 ease-in-out;
-        }
-        .param-input::placeholder {
-            @apply text-gray-400;
-        }
+		.stat-card {
+			@apply bg-white p-4 rounded-lg shadow;
+		}
 
-        /* Hide number input spinners for a cleaner UI */
-        .param-input[type="number"]::-webkit-inner-spin-button,
-        .param-input[type="number"]::-webkit-outer-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        .param-input[type="number"] {
-          -moz-appearance: textfield; /* Firefox */
-        }
-        /* === IMPROVED EVOLUTION PARAMETERS STYLES END === */
-        
-        /* General styles from original, kept for other parts of UI */
-        canvas { @apply border border-gray-300 rounded-md shadow-sm bg-white; }
-        
-        .output-log::-webkit-scrollbar { width: 8px; }
-        .output-log::-webkit-scrollbar-track { background: #e5e7eb; border-radius: 10px; }
-        .output-log::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 10px; }
-        .output-log::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+		.stat-value {
+			@apply text-2xl font-bold text-indigo-600;
+		}
 
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden; 
-        }
-        .main-scroll-container {
-            height: 100%;
-            overflow-y: auto;
-            padding: 1rem; 
-        }
-    </style>
+		.stat-label {
+			@apply text-sm text-gray-500;
+		}
+
+		canvas {
+			@apply border border-gray-300 rounded-md shadow-sm bg-white;
+		}
+
+		.output-log::-webkit-scrollbar {
+			width: 8px;
+		}
+
+		.output-log::-webkit-scrollbar-track {
+			background: #e5e7eb;
+			border-radius: 10px;
+		}
+
+		.output-log::-webkit-scrollbar-thumb {
+			background: #9ca3af;
+			border-radius: 10px;
+		}
+
+		.output-log::-webkit-scrollbar-thumb:hover {
+			background: #6b7280;
+		}
+
+		html,
+		body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.main-scroll-container {
+			height: 100%;
+			overflow-y: auto;
+			padding: 1rem;
+		}
+
+		/* Custom styles for range sliders */
+		input[type="range"] {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 100%;
+			height: 8px;
+			/* Track height */
+			background: #e0e7ff;
+			/* indigo-100 */
+			border-radius: 9999px;
+			/* rounded-full */
+			outline: none;
+			opacity: 0.9;
+			transition: opacity .15s ease-in-out;
+			cursor: pointer;
+		}
+
+		input[type="range"]:hover {
+			opacity: 1;
+		}
+
+		input[type="range"]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 18px;
+			/* Thumb width */
+			height: 18px;
+			/* Thumb height */
+			background: #4f46e5;
+			/* indigo-600 */
+			border-radius: 50%;
+			cursor: pointer;
+			border: 2px solid white;
+			box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+			/* shadow-sm */
+		}
+
+		input[type="range"]::-moz-range-thumb {
+			width: 18px;
+			height: 18px;
+			background: #4f46e5;
+			/* indigo-600 */
+			border-radius: 50%;
+			cursor: pointer;
+			border: 2px solid white;
+			box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+			/* shadow-sm */
+		}
+
+		input[type="range"]:focus::-webkit-slider-thumb {
+			box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+			/* focus:ring-indigo-500 focus:ring-opacity-40 (approx) */
+		}
+
+		input[type="range"]:focus::-moz-range-thumb {
+			box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+		}
+	</style>
 </head>
+
 <body class="flex flex-col items-center justify-center bg-gray-100 text-gray-800">
 
-    <div class="main-scroll-container w-full">
-        <div class="w-full max-w-7xl mx-auto bg-white shadow-xl rounded-lg p-6 space-y-6">
-            <header class="text-center">
-                <h1 class="text-3xl font-bold text-indigo-700">🧠 NEAT.js XOR Solver</h1>
-                <p class="text-gray-600 mt-1">Evolving neural networks to solve the XOR problem with configurable parameters.</p>
-            </header>
+	<div class="main-scroll-container w-full">
+		<div class="w-full max-w-7xl mx-auto bg-white shadow-xl rounded-lg p-6 space-y-6">
+			<header class="text-center">
+				<h1 class="text-3xl font-bold text-indigo-700">🧠 NEAT.js XOR Solver</h1>
+				<p class="text-gray-600 mt-1">Evolving neural networks to solve the XOR problem with configurable
+					parameters.</p>
+			</header>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- === EVOLUTION PARAMETERS SECTION WITH IMPROVED STYLES === -->
-                <div class="lg:col-span-1 space-y-5 p-6 bg-gray-50 rounded-xl border border-gray-200">
-                    <div>
-                        <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b border-gray-200 pb-2">Evolution Parameters</h2>
-                        <div class="space-y-4"> {/* Increased spacing between parameter items */}
-                            <div>
-                                <label for="populationSize" class="param-label">Population Size</label>
-                                <input type="number" id="populationSize" value="150" min="10" class="param-input">
-                            </div>
-                            <div>
-                                <label for="maxGenerations" class="param-label">Max Generations</label>
-                                <input type="number" id="maxGenerations" value="100" min="1" class="param-input">
-                            </div>
-                            <div>
-                                <label for="elitism" class="param-label">Elitism (Top N)</label>
-                                <input type="number" id="elitism" value="1" min="0" class="param-input">
-                            </div>
-                            <div>
-                                <label for="addNodeRate" class="param-label">Add Node Rate (0-1)</label>
-                                <input type="number" step="0.001" id="addNodeRate" value="0.03" min="0" max="1" class="param-input">
-                            </div>
-                            <div>
-                                <label for="addConnectionRate" class="param-label">Add Connection Rate (0-1)</label>
-                                <input type="number" step="0.001" id="addConnectionRate" value="0.05" min="0" max="1" class="param-input">
-                            </div>
-                            <div>
-                                <label for="weightMutationRate" class="param-label">Weight Mutation Rate (0-1)</label>
-                                <input type="number" step="0.01" id="weightMutationRate" value="0.8" min="0" max="1" class="param-input">
-                            </div>
-                            <div>
-                                <label for="weightPerturbation" class="param-label">Weight Perturbation (+/-)</label>
-                                <input type="number" step="0.01" id="weightPerturbation" value="0.1" min="0" class="param-input">
-                            </div>
-                        </div>
-                    </div>
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				<div class="lg:col-span-1 p-6 bg-gray-50 rounded-lg shadow-inner">
+					<div class="flex items-center mb-5 border-b border-gray-300 pb-3">
+						<i class="fas fa-cogs mr-3 text-indigo-600 text-xl"></i>
+						<h2 class="text-xl font-semibold text-gray-700">Evolution Parameters</h2>
+					</div>
 
-                    <button id="solveXORButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        Solve XOR Problem
-                    </button>
+					<div class="space-y-0">
+						<!-- Population Size -->
+						<div
+							class="param-item-container flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+							<div class="flex items-center space-x-2.5 mr-3 flex-shrink-0">
+								<i class="fas fa-users fa-fw w-5 text-center text-indigo-500"></i>
+								<label for="populationSize"
+									class="text-sm font-medium text-gray-700 whitespace-nowrap">Population Size</label>
+							</div>
+							<div class="flex items-center space-x-2 flex-grow min-w-0">
+								<input type="range" id="populationSizeSlider" min="10" max="500" value="150" step="10"
+									class="w-full">
+								<input type="number" id="populationSize" value="150" min="10" max="500" step="10"
+									class="w-20 text-sm px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+							</div>
+						</div>
 
-                    <div class="w-full bg-gray-200 rounded-full h-2.5"> {/* Slimmer progress bar */}
-                        <div id="progressBar" class="bg-indigo-500 h-2.5 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
-                    </div>
-                </div>
-                <!-- === END OF EVOLUTION PARAMETERS SECTION === -->
+						<!-- Max Generations -->
+						<div
+							class="param-item-container flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+							<div class="flex items-center space-x-2.5 mr-3 flex-shrink-0">
+								<i class="fas fa-stopwatch fa-fw w-5 text-center text-indigo-500"></i>
+								<label for="maxGenerations"
+									class="text-sm font-medium text-gray-700 whitespace-nowrap">Max Generations</label>
+							</div>
+							<div class="flex items-center space-x-2 flex-grow min-w-0">
+								<input type="range" id="maxGenerationsSlider" min="10" max="1000" value="100" step="10"
+									class="w-full">
+								<input type="number" id="maxGenerations" value="100" min="10" max="1000" step="10"
+									class="w-20 text-sm px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+							</div>
+						</div>
 
+						<!-- Elitism -->
+						<div
+							class="param-item-container flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+							<div class="flex items-center space-x-2.5 mr-3 flex-shrink-0">
+								<i class="fas fa-star fa-fw w-5 text-center text-indigo-500"></i>
+								<label for="elitism" class="text-sm font-medium text-gray-700 whitespace-nowrap">Elitism
+									(Top N)</label>
+							</div>
+							<div class="flex items-center space-x-2 flex-grow min-w-0">
+								<input type="range" id="elitismSlider" min="0" max="20" value="1" step="1"
+									class="w-full">
+								<input type="number" id="elitism" value="1" min="0" max="20" step="1"
+									class="w-20 text-sm px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+							</div>
+						</div>
 
-                <div class="lg:col-span-2 space-y-6">
-                    <div class="grid grid-cols-1 xl:grid-cols-5 gap-4">
-                        <div class="xl:col-span-3 p-4 bg-gray-50 rounded-lg shadow-inner">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Evolution Log</h3>
-                            <div id="outputLog" class="output-log h-48 bg-gray-800 text-gray-200 p-3 rounded-md text-xs font-mono overflow-y-auto whitespace-pre-wrap">
-                                <!-- Log messages will appear here -->
-                            </div>
-                        </div>
-                        <div class="xl:col-span-2 p-4 bg-gray-50 rounded-lg shadow-inner">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-3">Statistics</h3>
-                            <div class="space-y-1.5 text-sm">
-                                <div class="flex justify-between"><span>Generation:</span> <span id="statGeneration" class="font-semibold text-indigo-600">-</span></div>
-                                <div class="flex justify-between"><span>Best Fitness:</span> <span id="statBestFitness" class="font-semibold text-indigo-600">-</span></div>
-                                <div class="flex justify-between"><span>Avg. Nodes:</span> <span id="statAvgNodes" class="font-semibold text-indigo-600">-</span></div>
-                                <div class="flex justify-between"><span>Avg. Connections:</span> <span id="statAvgConnections" class="font-semibold text-indigo-600">-</span></div>
-                                <div class="mt-2 pt-2 border-t border-gray-300">
-                                    <h4 class="font-medium text-gray-600 mb-1">XOR Test Results:</h4>
-                                    <div id="xorTestResultsContainer" class="text-xs space-y-0.5">
-                                        <!-- XOR test results will be populated here -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+						<!-- Add Node Rate -->
+						<div
+							class="param-item-container flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+							<div class="flex items-center space-x-2.5 mr-3 flex-shrink-0">
+								<i class="fas fa-atom fa-fw w-5 text-center text-indigo-500"></i>
+								<label for="addNodeRate" class="text-sm font-medium text-gray-700 whitespace-nowrap">Add
+									Node Rate</label>
+							</div>
+							<div class="flex items-center space-x-2 flex-grow min-w-0">
+								<input type="range" id="addNodeRateSlider" min="0" max="0.5" step="0.001" value="0.03"
+									class="w-full">
+								<input type="number" id="addNodeRate" step="0.001" value="0.03" min="0" max="0.5"
+									class="w-20 text-sm px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+							</div>
+						</div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="p-4 bg-gray-50 rounded-lg shadow-inner">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-2 text-center">XOR Output Visualization</h3>
-                            <canvas id="xorOutputCanvas" width="280" height="280" class="mx-auto"></canvas>
-                        </div>
-                        <div class="p-4 bg-gray-50 rounded-lg shadow-inner">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-2 text-center">Best Network Structure</h3>
-                            <canvas id="networkCanvas" width="380" height="280" class="mx-auto"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+						<!-- Add Connection Rate -->
+						<div
+							class="param-item-container flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+							<div class="flex items-center space-x-2.5 mr-3 flex-shrink-0">
+								<i class="fas fa-link fa-fw w-5 text-center text-indigo-500"></i>
+								<label for="addConnectionRate"
+									class="text-sm font-medium text-gray-700 whitespace-nowrap">Add Conn. Rate</label>
+							</div>
+							<div class="flex items-center space-x-2 flex-grow min-w-0">
+								<input type="range" id="addConnectionRateSlider" min="0" max="0.5" step="0.001"
+									value="0.05" class="w-full">
+								<input type="number" id="addConnectionRate" step="0.001" value="0.05" min="0" max="0.5"
+									class="w-20 text-sm px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+							</div>
+						</div>
 
-    <script src="release/neat.js"></script> {/* Assuming neat.js is in release/ folder */}
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const populationSizeInput = document.getElementById('populationSize');
-            const maxGenerationsInput = document.getElementById('maxGenerations');
-            const elitismInput = document.getElementById('elitism');
-            const addNodeRateInput = document.getElementById('addNodeRate');
-            const addConnectionRateInput = document.getElementById('addConnectionRate');
-            const weightMutationRateInput = document.getElementById('weightMutationRate');
-            const weightPerturbationInput = document.getElementById('weightPerturbation');
-            
-            const solveButton = document.getElementById('solveXORButton');
-            const progressBar = document.getElementById('progressBar');
-            const outputLogDiv = document.getElementById('outputLog');
-            
-            const statGeneration = document.getElementById('statGeneration');
-            const statBestFitness = document.getElementById('statBestFitness');
-            const statAvgNodes = document.getElementById('statAvgNodes');
-            const statAvgConnections = document.getElementById('statAvgConnections');
-            
-            const xorTestResultsDiv = document.getElementById('xorTestResultsContainer');
-            const xorOutputCanvas = document.getElementById('xorOutputCanvas');
-            const networkCanvas = document.getElementById('networkCanvas');
+						<!-- Weight Mutation Rate -->
+						<div
+							class="param-item-container flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+							<div class="flex items-center space-x-2.5 mr-3 flex-shrink-0">
+								<i class="fas fa-dice-three fa-fw w-5 text-center text-indigo-500"></i>
+								<label for="weightMutationRate"
+									class="text-sm font-medium text-gray-700 whitespace-nowrap">Weight Mut. Rate</label>
+							</div>
+							<div class="flex items-center space-x-2 flex-grow min-w-0">
+								<input type="range" id="weightMutationRateSlider" min="0" max="1" step="0.01"
+									value="0.8" class="w-full">
+								<input type="number" id="weightMutationRate" step="0.01" value="0.8" min="0" max="1"
+									class="w-20 text-sm px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+							</div>
+						</div>
 
-            let neatInstance;
-            let bestGenomeStorage = null;
+						<!-- Weight Perturbation -->
+						<div
+							class="param-item-container flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+							<div class="flex items-center space-x-2.5 mr-3 flex-shrink-0">
+								<i class="fas fa-sliders-h fa-fw w-5 text-center text-indigo-500"></i>
+								<label for="weightPerturbation"
+									class="text-sm font-medium text-gray-700 whitespace-nowrap">Weight Perturb.</label>
+							</div>
+							<div class="flex items-center space-x-2 flex-grow min-w-0">
+								<input type="range" id="weightPerturbationSlider" min="0" max="1" step="0.01"
+									value="0.1" class="w-full">
+								<input type="number" id="weightPerturbation" step="0.01" value="0.1" min="0" max="1"
+									class="w-20 text-sm px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-center">
+							</div>
+						</div>
+					</div>
 
-            function logMessage(message) {
-                const timestamp = new Date().toLocaleTimeString();
-                outputLogDiv.innerHTML += `[${timestamp}] ${message}\n`;
-                outputLogDiv.scrollTop = outputLogDiv.scrollHeight;
-            }
+					<button id="solveXORButton"
+						class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed mt-6">
+						Solve XOR Problem
+					</button>
 
-            function updateProgressBar(percentage) {
-                progressBar.style.width = percentage + '%';
-            }
+					<div class="w-full bg-gray-200 rounded-full h-3.5 mt-4">
+						<div id="progressBar"
+							class="bg-indigo-500 h-3.5 rounded-full transition-all duration-300 ease-out"
+							style="width: 0%"></div>
+					</div>
+				</div>
 
-            function resetUIState() {
-                outputLogDiv.innerHTML = '';
-                statGeneration.textContent = '-';
-                statBestFitness.textContent = '-';
-                statAvgNodes.textContent = '-';
-                statAvgConnections.textContent = '-';
-                xorTestResultsDiv.innerHTML = '<p class="text-gray-400">Run evolution to see results.</p>';
-                
-                const xorCtx = xorOutputCanvas.getContext('2d');
-                xorCtx.clearRect(0, 0, xorOutputCanvas.width, xorOutputCanvas.height);
-                xorCtx.fillStyle = '#f9fafb'; // bg-gray-50
-                xorCtx.fillRect(0,0, xorOutputCanvas.width, xorOutputCanvas.height);
+				<div class="lg:col-span-2 space-y-6">
+					<div class="grid grid-cols-1 xl:grid-cols-5 gap-4">
+						<div class="xl:col-span-3 p-4 bg-gray-50 rounded-lg shadow-inner">
+							<h3 class="text-lg font-semibold text-gray-700 mb-2">Evolution Log</h3>
+							<div id="outputLog"
+								class="output-log h-48 bg-gray-800 text-gray-200 p-3 rounded-md text-xs font-mono overflow-y-auto whitespace-pre-wrap">
+							</div>
+						</div>
+						<div class="xl:col-span-2 p-4 bg-gray-50 rounded-lg shadow-inner">
+							<h3 class="text-lg font-semibold text-gray-700 mb-3">Statistics</h3>
+							<div class="space-y-1.5 text-sm">
+								<div class="flex justify-between"><span>Generation:</span> <span id="statGeneration"
+										class="font-semibold text-indigo-600">-</span></div>
+								<div class="flex justify-between"><span>Best Fitness:</span> <span id="statBestFitness"
+										class="font-semibold text-indigo-600">-</span></div>
+								<div class="flex justify-between"><span>Avg. Nodes:</span> <span id="statAvgNodes"
+										class="font-semibold text-indigo-600">-</span></div>
+								<div class="flex justify-between"><span>Avg. Connections:</span> <span
+										id="statAvgConnections" class="font-semibold text-indigo-600">-</span></div>
+								<div class="mt-2 pt-2 border-t border-gray-300">
+									<h4 class="font-medium text-gray-600 mb-1">XOR Test Results:</h4>
+									<div id="xorTestResultsContainer" class="text-xs space-y-0.5">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
 
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div class="p-4 bg-gray-50 rounded-lg shadow-inner">
+							<h3 class="text-lg font-semibold text-gray-700 mb-2 text-center">XOR Output Visualization
+							</h3>
+							<canvas id="xorOutputCanvas" width="280" height="280" class="mx-auto"></canvas>
+						</div>
+						<div class="p-4 bg-gray-50 rounded-lg shadow-inner">
+							<h3 class="text-lg font-semibold text-gray-700 mb-2 text-center">Best Network Structure</h3>
+							<canvas id="networkCanvas" width="380" height="280" class="mx-auto"></canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-                const networkCtx = networkCanvas.getContext('2d');
-                networkCtx.clearRect(0, 0, networkCanvas.width, networkCanvas.height);
-                networkCtx.fillStyle = '#f9fafb';
-                networkCtx.fillRect(0,0, networkCanvas.width, networkCanvas.height);
+	<script src="release/neat.js"></script>
+	<script>
+		document.addEventListener('DOMContentLoaded',() => {
+			const populationSizeInput = document.getElementById('populationSize');
+			const maxGenerationsInput = document.getElementById('maxGenerations');
+			const elitismInput = document.getElementById('elitism');
+			const addNodeRateInput = document.getElementById('addNodeRate');
+			const addConnectionRateInput = document.getElementById('addConnectionRate');
+			const weightMutationRateInput = document.getElementById('weightMutationRate');
+			const weightPerturbationInput = document.getElementById('weightPerturbation');
 
+			const solveButton = document.getElementById('solveXORButton');
+			const progressBar = document.getElementById('progressBar');
+			const outputLogDiv = document.getElementById('outputLog');
 
-                updateProgressBar(0);
-                bestGenomeStorage = null;
-            }
-            
-            function displayStatistics(result, currentNeatInstance) {
-                statGeneration.textContent = result.generation;
-                statBestFitness.textContent = result.bestFitness.toFixed(5);
-                const popStats = currentNeatInstance.getStats(result.population);
-                statAvgNodes.textContent = popStats.averageNodes.toFixed(2);
-                statAvgConnections.textContent = popStats.averageConnections.toFixed(2);
-            }
+			const statGeneration = document.getElementById('statGeneration');
+			const statBestFitness = document.getElementById('statBestFitness');
+			const statAvgNodes = document.getElementById('statAvgNodes');
+			const statAvgConnections = document.getElementById('statAvgConnections');
 
-            function runXORTests(genome, currentNeatInstance) {
-                if (!genome) {
-                    logMessage("No genome available for testing.");
-                    xorTestResultsDiv.innerHTML = '<p class="text-red-500">Error: No genome to test.</p>';
-                    return;
-                }
-                const network = currentNeatInstance.createNetwork(genome);
-                const testCases = [
-                    { input: [0, 0], expected: 0 }, { input: [0, 1], expected: 1 },
-                    { input: [1, 0], expected: 1 }, { input: [1, 1], expected: 0 }
-                ];
+			const xorTestResultsDiv = document.getElementById('xorTestResultsContainer');
+			const xorOutputCanvas = document.getElementById('xorOutputCanvas');
+			const networkCanvas = document.getElementById('networkCanvas');
 
-                let resultsHTML = '';
-                logMessage("--- XOR Test Results ---");
-                testCases.forEach(tc => {
-                    const output = network.execute(tc.input);
-                    const actual = output[0];
-                    const correct = Math.abs(actual - tc.expected) < 0.5;
-                    const resultText = `XOR(${tc.input.join(',')}) = ${actual.toFixed(3)} (exp: ${tc.expected}) ${correct ? '✅' : '❌'}`;
-                    logMessage(resultText);
-                    resultsHTML += `
+			let neatInstance;
+			let bestGenomeStorage = null;
+
+			function setupParameterSync() {
+				const paramItems = document.querySelectorAll('.param-item-container');
+
+				paramItems.forEach(item => {
+					const slider = item.querySelector('input[type="range"]');
+					const numberInput = item.querySelector('input[type="number"]');
+
+					if(!slider || !numberInput) return;
+
+					const stepAttr = slider.getAttribute('step') || "1";
+					let precision = 0;
+					if(stepAttr.includes('.')) {
+						precision = stepAttr.split('.')[1].length;
+					}
+
+					let valToSync = parseFloat(numberInput.value);
+					if(isNaN(valToSync)) {
+						valToSync = parseFloat(slider.getAttribute('value'));
+					}
+
+					const min = parseFloat(slider.min);
+					const max = parseFloat(slider.max);
+					if(valToSync < min) valToSync = min;
+					if(valToSync > max) valToSync = max;
+
+					if(stepAttr !== "any" && parseFloat(stepAttr) > 0) {
+						// Ensure value is a multiple of step
+						valToSync = Math.round(valToSync / parseFloat(stepAttr)) * parseFloat(stepAttr);
+						// And then clamp again, because rounding might exceed max
+						if(valToSync < min) valToSync = min;
+						if(valToSync > max) valToSync = max;
+					}
+
+					numberInput.value = valToSync.toFixed(precision);
+					slider.value = valToSync;
+
+					slider.addEventListener('input',() => {
+						numberInput.value = parseFloat(slider.value).toFixed(precision);
+					});
+
+					numberInput.addEventListener('change',() => {
+						let val = parseFloat(numberInput.value);
+
+						if(isNaN(val)) {
+							val = parseFloat(slider.getAttribute('value')) || min;
+						} else if(val < min) {
+							val = min;
+						} else if(val > max) {
+							val = max;
+						}
+
+						if(stepAttr !== "any" && parseFloat(stepAttr) > 0) {
+							val = Math.round(val / parseFloat(stepAttr)) * parseFloat(stepAttr);
+							if(val < min) val = min;
+							if(val > max) val = max;
+						}
+
+						numberInput.value = val.toFixed(precision);
+						slider.value = val;
+					});
+				});
+			}
+
+			function logMessage(message) {
+				const timestamp = new Date().toLocaleTimeString();
+				outputLogDiv.innerHTML += `[${timestamp}] ${message}\n`;
+				outputLogDiv.scrollTop = outputLogDiv.scrollHeight;
+			}
+
+			function updateProgressBar(percentage) {
+				progressBar.style.width = percentage + '%';
+			}
+
+			function resetUIState() {
+				outputLogDiv.innerHTML = '';
+				statGeneration.textContent = '-';
+				statBestFitness.textContent = '-';
+				statAvgNodes.textContent = '-';
+				statAvgConnections.textContent = '-';
+				xorTestResultsDiv.innerHTML = '<p class="text-gray-400">Run evolution to see results.</p>';
+
+				const xorCtx = xorOutputCanvas.getContext('2d');
+				xorCtx.clearRect(0,0,xorOutputCanvas.width,xorOutputCanvas.height);
+				xorCtx.fillStyle = '#f9fafb';
+				xorCtx.fillRect(0,0,xorOutputCanvas.width,xorOutputCanvas.height);
+
+				const networkCtx = networkCanvas.getContext('2d');
+				networkCtx.clearRect(0,0,networkCanvas.width,networkCanvas.height);
+				networkCtx.fillStyle = '#f9fafb';
+				networkCtx.fillRect(0,0,networkCanvas.width,networkCanvas.height);
+
+				updateProgressBar(0);
+				bestGenomeStorage = null;
+			}
+
+			function displayStatistics(result,currentNeatInstance) {
+				statGeneration.textContent = result.generation;
+				statBestFitness.textContent = result.bestFitness.toFixed(5);
+				const popStats = currentNeatInstance.getStats(result.population);
+				statAvgNodes.textContent = popStats.averageNodes.toFixed(2);
+				statAvgConnections.textContent = popStats.averageConnections.toFixed(2);
+			}
+
+			function runXORTests(genome,currentNeatInstance) {
+				if(!genome) {
+					logMessage("No genome available for testing.");
+					xorTestResultsDiv.innerHTML = '<p class="text-red-500">Error: No genome to test.</p>';
+					return;
+				}
+				const network = currentNeatInstance.createNetwork(genome);
+				const testCases = [
+					{input: [0,0],expected: 0},{input: [0,1],expected: 1},
+					{input: [1,0],expected: 1},{input: [1,1],expected: 0}
+				];
+
+				let resultsHTML = '';
+				logMessage("--- XOR Test Results ---");
+				testCases.forEach(tc => {
+					const output = network.execute(tc.input);
+					const actual = output[0];
+					const correct = Math.abs(actual - tc.expected) < 0.5;
+					const resultText = `XOR(${tc.input.join(',')}) = ${actual.toFixed(3)} (exp: ${tc.expected}) ${correct ? '✅' : '❌'}`;
+					logMessage(resultText);
+					resultsHTML += `
                         <div class="flex justify-between items-center ${correct ? 'text-green-600' : 'text-red-600'}">
                             <span>(${tc.input.join(',')}) → ${actual.toFixed(3)}</span>
                             <span class="font-bold">${correct ? 'PASS' : 'FAIL'}</span>
                         </div>`;
-                });
-                xorTestResultsDiv.innerHTML = resultsHTML;
-            }
+				});
+				xorTestResultsDiv.innerHTML = resultsHTML;
+			}
 
-            function visualizeXOROutput(genome, currentNeatInstance) {
-                if (!genome) return;
-                const ctx = xorOutputCanvas.getContext('2d');
-                const network = currentNeatInstance.createNetwork(genome);
-                const resolution = 100; 
-                const cellWidth = xorOutputCanvas.width / resolution;
-                const cellHeight = xorOutputCanvas.height / resolution;
+			function visualizeXOROutput(genome,currentNeatInstance) {
+				if(!genome) return;
+				const ctx = xorOutputCanvas.getContext('2d');
+				const network = currentNeatInstance.createNetwork(genome);
+				const resolution = 100;
+				const cellWidth = xorOutputCanvas.width / resolution;
+				const cellHeight = xorOutputCanvas.height / resolution;
 
-                ctx.clearRect(0, 0, xorOutputCanvas.width, xorOutputCanvas.height);
-                for (let i = 0; i < resolution; i++) {
-                    for (let j = 0; j < resolution; j++) {
-                        const x = i / (resolution - 1);
-                        const y = j / (resolution - 1);
-                        const outputVal = network.execute([x, y])[0];
-                        const clampedVal = Math.max(0, Math.min(1, outputVal));
-                        
-                        const hue = (1 - clampedVal) * 240; 
-                        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
-                        ctx.fillRect(i * cellWidth, j * cellHeight, cellWidth, cellHeight);
-                    }
-                }
-                logMessage("XOR output visualization updated.");
-            }
+				ctx.clearRect(0,0,xorOutputCanvas.width,xorOutputCanvas.height);
+				for(let i = 0;i < resolution;i++) {
+					for(let j = 0;j < resolution;j++) {
+						const x = i / (resolution - 1);
+						const y = j / (resolution - 1);
+						const outputVal = network.execute([x,y])[0];
+						const clampedVal = Math.max(0,Math.min(1,outputVal));
 
-            function drawNetworkDiagram(genome, currentNeatInstance) {
-                if (!genome) return;
-                const ctx = networkCanvas.getContext('2d');
-                ctx.clearRect(0, 0, networkCanvas.width, networkCanvas.height);
-                
-                const nodeRadius = 8;
-                const paddingX = 40;
-                const paddingY = 30;
-                const layerSpacingX = (networkCanvas.width - 2 * paddingX) / 2; 
+						const hue = (1 - clampedVal) * 240;
+						ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+						ctx.fillRect(i * cellWidth,j * cellHeight,cellWidth,cellHeight);
+					}
+				}
+				logMessage("XOR output visualization updated.");
+			}
 
-                const { nodes, connections } = genome;
-                const nodePositions = new Map();
+			function drawNetworkDiagram(genome,currentNeatInstance) {
+				if(!genome) return;
+				const ctx = networkCanvas.getContext('2d');
+				ctx.clearRect(0,0,networkCanvas.width,networkCanvas.height);
 
-                const inputNodes = nodes.filter(n => n.type === 'input').sort((a,b) => a.id - b.id);
-                const outputNodes = nodes.filter(n => n.type === 'output').sort((a,b) => a.id - b.id);
-                const hiddenNodes = nodes.filter(n => n.type === 'hidden').sort((a,b) => a.id - b.id);
+				const nodeRadius = 8;
+				const paddingX = 40;
+				const paddingY = 30;
+				const layerSpacingX = (networkCanvas.width - 2 * paddingX) / 2;
 
-                function calculateYPos(nodeList, index, totalHeight) {
-                    const spacing = (totalHeight - nodeList.length * nodeRadius * 2) / (nodeList.length + 1);
-                    return paddingY + (index + 1) * spacing + index * nodeRadius * 2 + nodeRadius;
-                }
+				const {nodes,connections} = genome;
+				const nodePositions = new Map();
 
-                const canvasHeight = networkCanvas.height - 2 * paddingY;
+				const inputNodes = nodes.filter(n => n.type === 'input').sort((a,b) => a.id - b.id);
+				const outputNodes = nodes.filter(n => n.type === 'output').sort((a,b) => a.id - b.id);
+				const hiddenNodes = nodes.filter(n => n.type === 'hidden').sort((a,b) => a.id - b.id);
 
-                inputNodes.forEach((node, i) => nodePositions.set(node.id, { x: paddingX, y: calculateYPos(inputNodes, i, canvasHeight) }));
-                outputNodes.forEach((node, i) => nodePositions.set(node.id, { x: paddingX + 2 * layerSpacingX, y: calculateYPos(outputNodes, i, canvasHeight) }));
-                hiddenNodes.forEach((node, i) => nodePositions.set(node.id, { x: paddingX + layerSpacingX, y: calculateYPos(hiddenNodes, i, canvasHeight) }));
+				function calculateYPos(nodeList,index,totalHeight) {
+					const numNodes = nodeList.length;
+					if(numNodes === 0) return paddingY + totalHeight / 2; // Center if no nodes (should not happen for input/output)
+					if(numNodes === 1) return paddingY + totalHeight / 2; // Center if only one node
+					const spacing = (totalHeight - numNodes * nodeRadius * 2) / (numNodes + 1); // was (nodeList.length + 1)
+					return paddingY + (index + 1) * spacing + index * nodeRadius * 2 + nodeRadius;
+				}
 
-                connections.forEach(conn => {
-                    if (!conn.enabled) return;
-                    const fromPos = nodePositions.get(conn.from);
-                    const toPos = nodePositions.get(conn.to);
-                    if (fromPos && toPos) {
-                        ctx.beginPath();
-                        ctx.moveTo(fromPos.x, fromPos.y);
-                        ctx.lineTo(toPos.x, toPos.y);
-                        const weightAbs = Math.abs(conn.weight);
-                        const alpha = Math.min(1, weightAbs / 2); 
-                        ctx.strokeStyle = conn.weight > 0 ? `rgba(74, 222, 128, ${alpha})` : `rgba(248, 113, 113, ${alpha})`; 
-                        ctx.lineWidth = Math.max(0.5, Math.min(4, weightAbs));
-                        ctx.stroke();
-                    }
-                });
+				const canvasHeightUsable = networkCanvas.height - 2 * paddingY;
 
-                nodePositions.forEach((pos, id) => {
-                    const node = nodes.find(n => n.id === id);
-                    ctx.beginPath();
-                    ctx.arc(pos.x, pos.y, nodeRadius, 0, 2 * Math.PI);
-                    if (node.type === 'input') ctx.fillStyle = '#60a5fa'; 
-                    else if (node.type === 'output') ctx.fillStyle = '#34d399'; 
-                    else ctx.fillStyle = '#facc15'; 
-                    ctx.fill();
-                    ctx.strokeStyle = '#4b5563'; 
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                });
-                logMessage("Best network structure drawn.");
-            }
+				inputNodes.forEach((node,i) => nodePositions.set(node.id,{x: paddingX,y: calculateYPos(inputNodes,i,canvasHeightUsable)}));
+				outputNodes.forEach((node,i) => nodePositions.set(node.id,{x: paddingX + 2 * layerSpacingX,y: calculateYPos(outputNodes,i,canvasHeightUsable)}));
+				hiddenNodes.forEach((node,i) => nodePositions.set(node.id,{x: paddingX + layerSpacingX,y: calculateYPos(hiddenNodes,i,canvasHeightUsable)}));
 
-            solveButton.addEventListener('click', async () => {
-                solveButton.disabled = true;
-                resetUIState();
-                logMessage("Initializing NEAT evolution...");
+				connections.forEach(conn => {
+					if(!conn.enabled) return;
+					const fromPos = nodePositions.get(conn.from);
+					const toPos = nodePositions.get(conn.to);
+					if(fromPos && toPos) {
+						ctx.beginPath();
+						ctx.moveTo(fromPos.x,fromPos.y);
+						ctx.lineTo(toPos.x,toPos.y);
+						const weightAbs = Math.abs(conn.weight);
+						const alpha = Math.min(1,weightAbs / 2);
+						ctx.strokeStyle = conn.weight > 0 ? `rgba(74, 222, 128, ${alpha})` : `rgba(248, 113, 113, ${alpha})`;
+						ctx.lineWidth = Math.max(0.5,Math.min(4,weightAbs));
+						ctx.stroke();
+					}
+				});
 
-                neatInstance = new NEAT.NEAT({ seed: Math.floor(Math.random() * 10000) }); 
+				nodePositions.forEach((pos,id) => {
+					const node = nodes.find(n => n.id === id);
+					if(!node) return; // Should not happen
+					ctx.beginPath();
+					ctx.arc(pos.x,pos.y,nodeRadius,0,2 * Math.PI);
+					if(node.type === 'input') ctx.fillStyle = '#60a5fa';
+					else if(node.type === 'output') ctx.fillStyle = '#34d399';
+					else ctx.fillStyle = '#facc15';
+					ctx.fill();
+					ctx.strokeStyle = '#4b5563';
+					ctx.lineWidth = 1;
+					ctx.stroke();
+				});
+				logMessage("Best network structure drawn.");
+			}
 
-                const evolutionParams = {
-                    ...NEAT.DEFAULT_EVOLUTION_CONFIG,
-                    populationSize: parseInt(populationSizeInput.value),
-                    maxGenerations: parseInt(maxGenerationsInput.value),
-                    elitism: parseInt(elitismInput.value),
-                    addNodeMutationRate: parseFloat(addNodeRateInput.value),
-                    addConnectionMutationRate: parseFloat(addConnectionRateInput.value),
-                    weightMutationRate: parseFloat(weightMutationRateInput.value),
-                    weightPerturbation: parseFloat(weightPerturbationInput.value),
-                };
+			solveButton.addEventListener('click',async () => {
+				solveButton.disabled = true;
+				resetUIState();
+				logMessage("Initializing NEAT evolution...");
 
-                logMessage(`Starting evolution: Pop=${evolutionParams.populationSize}, Gens=${evolutionParams.maxGenerations}`);
-                updateProgressBar(5); 
+				neatInstance = new NEAT.NEAT({seed: Math.floor(Math.random() * 10000)});
 
-                const fitnessFunction = (genome) => {
-                    const network = neatInstance.createNetwork(genome);
-                    let fitness = 4.0; 
-                    const testCases = [
-                        { input: [0, 0], expected: 0 }, { input: [0, 1], expected: 1 },
-                        { input: [1, 0], expected: 1 }, { input: [1, 1], expected: 0 }
-                    ];
-                    for (const tc of testCases) {
-                        const output = network.execute(tc.input);
-                        fitness -= Math.pow(output[0] - tc.expected, 2);
-                    }
-                    return { fitness: Math.max(0, fitness) }; 
-                };
-                
-                try {
-                    const result = await neatInstance.run(2, 1, fitnessFunction, evolutionParams);
-                    
-                    bestGenomeStorage = result.bestGenome;
-                    updateProgressBar(100);
-                    logMessage(`Evolution finished! Generations: ${result.generation}, Best Fitness: ${result.bestFitness.toFixed(5)}`);
+				const evolutionParams = {
+					...NEAT.DEFAULT_EVOLUTION_CONFIG,
+					populationSize: parseInt(populationSizeInput.value),
+					maxGenerations: parseInt(maxGenerationsInput.value),
+					elitism: parseInt(elitismInput.value),
+					addNodeMutationRate: parseFloat(addNodeRateInput.value),
+					addConnectionMutationRate: parseFloat(addConnectionRateInput.value),
+					weightMutationRate: parseFloat(weightMutationRateInput.value),
+					weightPerturbation: parseFloat(weightPerturbationInput.value),
+				};
 
-                    displayStatistics(result, neatInstance);
-                    runXORTests(bestGenomeStorage, neatInstance);
-                    visualizeXOROutput(bestGenomeStorage, neatInstance);
-                    drawNetworkDiagram(bestGenomeStorage, neatInstance);
+				logMessage(`Starting evolution: Pop=${evolutionParams.populationSize}, Gens=${evolutionParams.maxGenerations}`);
+				updateProgressBar(5);
 
-                } catch (error) {
-                    logMessage(`Evolution Error: ${error.message}`);
-                    console.error(error);
-                    updateProgressBar(0);
-                } finally {
-                    solveButton.disabled = false;
-                }
-            });
-            
-            resetUIState();
-            logMessage('Welcome! Configure parameters and click "Solve XOR Problem" to begin.');
-        });
-    </script>
+				const fitnessFunction = (genome) => {
+					const network = neatInstance.createNetwork(genome);
+					let fitness = 4.0;
+					const testCases = [
+						{input: [0,0],expected: 0},{input: [0,1],expected: 1},
+						{input: [1,0],expected: 1},{input: [1,1],expected: 0}
+					];
+					for(const tc of testCases) {
+						const output = network.execute(tc.input);
+						fitness -= Math.pow(output[0] - tc.expected,2);
+					}
+					return {fitness: Math.max(0,fitness)};
+				};
+
+				try {
+					const result = await neatInstance.run(2,1,fitnessFunction,evolutionParams);
+
+					bestGenomeStorage = result.bestGenome;
+					updateProgressBar(100);
+					logMessage(`Evolution finished! Generations: ${result.generation}, Best Fitness: ${result.bestFitness.toFixed(5)}`);
+
+					displayStatistics(result,neatInstance);
+					runXORTests(bestGenomeStorage,neatInstance);
+					visualizeXOROutput(bestGenomeStorage,neatInstance);
+					drawNetworkDiagram(bestGenomeStorage,neatInstance);
+
+				} catch(error) {
+					logMessage(`Evolution Error: ${error.message}`);
+					console.error(error);
+					updateProgressBar(0);
+				} finally {
+					solveButton.disabled = false;
+				}
+			});
+
+			setupParameterSync();
+			resetUIState();
+			logMessage('Welcome! Configure parameters and click "Solve XOR Problem" to begin.');
+		});
+	</script>
 </body>
+
 </html>
